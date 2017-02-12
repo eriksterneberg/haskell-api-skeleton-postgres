@@ -8,6 +8,7 @@ import Network.HTTP.Types.Method (StdMethod(..))
 import Data.List (intercalate)
 import Data.Text.Lazy (pack)
 import Data.Monoid ((<>))
+import Network.Wai.Middleware.RequestLogger
 
 import Types
 import qualified User
@@ -17,7 +18,7 @@ routes :: ScottyM ()
 routes = do
 
     -- All userdefined routes
-    foldr1 (>>) (map routeToScotty userdefinedRoutes)
+    foldr1 (>>) $ map routeToScotty allRoutes
 
     -- Explorable routes
     addroute GET "/" $ do
@@ -45,4 +46,6 @@ allRoutes = concat [ exampleRoutes
 main :: IO ()
 main = do
     putStrLn "Starting server..."
-    scotty 3000 routes
+    scotty 3000 $ do
+    middleware logStdout  -- middleware logStdoutDev for dev
+    routesroutes

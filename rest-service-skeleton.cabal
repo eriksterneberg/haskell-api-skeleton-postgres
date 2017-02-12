@@ -23,4 +23,5 @@ executable rest-service-skeleton
                        , aeson
                        , http-types
                        , text
+                       , wai-extra
 
