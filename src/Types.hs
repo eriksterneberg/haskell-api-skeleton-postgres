@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Types where
 
 import Web.Scotty

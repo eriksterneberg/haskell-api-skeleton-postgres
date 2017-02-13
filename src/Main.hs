@@ -1,12 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module Main where
 
 import Web.Scotty
 import Network.HTTP.Types.Method (StdMethod(..))
-import Data.List (intercalate)
-import Data.Text.Lazy (pack)
+import Data.Text.Lazy (pack, intercalate)
 import Data.Monoid ((<>))
 import Network.Wai.Middleware.RequestLogger
 
@@ -18,11 +16,14 @@ routes :: ScottyM ()
 routes = do
 
     -- All userdefined routes
-    foldr1 (>>) $ map routeToScotty allRoutes
+    foldr1 (>>) $ map routeToScotty userdefinedRoutes
+
+    -- Serve static files
+    -- get "/404" $ file "404.html"
 
     -- Explorable routes
-    addroute GET "/" $ do
-        text $ pack $ intercalate "\n" $  "Explorable endpoints:" : (map show allRoutes)
+    addroute GET "/" $ text $ 
+        intercalate "\n" $ "Explorable endpoints:" : (map (pack . show) userdefinedRoutes)
 
     -- Fallback on no matched route
     notFound $ text "there is no such route."
@@ -37,15 +38,13 @@ exampleRoutes =
 
 
 -- Define your routes here.
-allRoutes :: [Route]
-allRoutes = concat [ exampleRoutes
-                   , User.routes
-                   ] -- Add routes from other modules here
+userdefinedRoutes :: [Route]
+userdefinedRoutes = concat [exampleRoutes, User.routes]
 
 
 main :: IO ()
 main = do
     putStrLn "Starting server..."
     scotty 3000 $ do
-    middleware logStdout  -- middleware logStdoutDev for dev
-    routesroutes
+        middleware logStdout  -- middleware logStdoutDev for dev
+        routes
