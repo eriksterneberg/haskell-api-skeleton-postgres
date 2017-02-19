@@ -29,4 +29,6 @@ executable rest-service-skeleton
                        , bytestring
   other-modules:       Types
                        , User
+                       , Config
+                       , Router
 
