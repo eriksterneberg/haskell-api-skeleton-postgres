@@ -25,6 +25,7 @@ executable rest-service-skeleton
                        , http-types
                        , text
                        , wai-extra
+                       , wai
                        , bytestring
   other-modules:       Types
                        , User
