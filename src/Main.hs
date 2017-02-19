@@ -7,6 +7,10 @@ import Network.HTTP.Types.Method (StdMethod(..))
 import Data.Text.Lazy (pack, intercalate)
 import Data.Monoid ((<>))
 import Network.Wai.Middleware.RequestLogger
+import Network.Wai.Middleware.HttpAuth
+import Data.ByteString (ByteString)
+import System.Environment (lookupEnv)
+import Text.Read (readMaybe)
 
 import Types
 import qualified User
@@ -42,9 +46,33 @@ userdefinedRoutes :: [Route]
 userdefinedRoutes = concat [exampleRoutes, User.routes]
 
 
+authenticate :: ByteString -> ByteString -> IO Bool
+authenticate user password = return (user == "zackarias.bergman@gmail.com" && password == "northernlights")
+
+
+type Port = Int
+
+
+defaultPort :: Port
+defaultPort = 3000
+
+
+getPort :: IO Port
+getPort = do
+    systemVal <- lookupEnv "PORT"
+    let port = case systemVal of Nothing -> defaultPort
+                                 Just stringVal -> case readMaybe stringVal :: Maybe Int of Nothing -> defaultPort
+                                                                                            Just intVal -> intVal
+    return port
+
+
 main :: IO ()
 main = do
     putStrLn "Starting server..."
-    scotty 3000 $ do
-        middleware logStdout  -- middleware logStdoutDev for dev
+    port <- getPort
+    scotty port $ do
+        -- middleware logStdout
+        middleware logStdoutDev
+        middleware $ basicAuth authenticate "Default Realm"
         routes
+
