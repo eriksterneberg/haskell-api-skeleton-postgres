@@ -12,6 +12,8 @@ import Types
 
 data User = User { userId :: Int
                  , userName :: String
+                 , password :: String
+                 , email :: String
                  } deriving (Show, Generic)
 
 
@@ -37,11 +39,32 @@ matchesId id' user = userId user == id'
 
 routes :: [Route]
 routes =
-    [ Route GET "/user" $ json allUsers  -- all users
+    [ 
+
+    -- AUTHENTICATION
+      -- Login:
+      -- Route GET "/token" $ do
+        -- constructing a JWT for the user using GET parameters username and password
+
+      -- Authenticate request:
+      -- Route GET "/authenticate" $ do
+        -- return the user if the JWT checks out
+        -- the website can of course cache the user's name and email if it wants to
+        -- that cache can be invalidated when the user logs out
+        -- otherwise the cache will never expire. Redis?
+    -- END AUTHENTICATION
+
+    -- USER OPERATIONS
+      Route GET "/user" $ json allUsers  -- all users
     , Route GET "/user/:id" (do
         id' <- param "id"
         json (filter (matchesId id') allUsers)) -- one user
     , Route POST "/user" (do
         user <- jsonData :: ActionM User
         json user)
+      -- Route to get user using a certain id
+      -- Route to create new user
+      -- Route to update user
+      -- Route to delete user
+    -- END USER OPERATIONS
     ]

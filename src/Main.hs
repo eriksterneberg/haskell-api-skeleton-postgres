@@ -17,9 +17,20 @@ authenticate user password = return (user == "zackarias.bergman@gmail.com" && pa
 main :: IO ()
 main = do
     putStrLn "Starting server..."
+
+    -- Port for server to run on
     port <- Config.getPort
+
+    -- Settings
     environment <- Config.getEnvironment
+
     scotty port $ do
+
+        -- Logger
         middleware $ Config.getLogger environment
+
+        -- Authenticate request to service
         middleware $ basicAuth authenticate "Default Realm"
+
+        -- Routes
         Router.routes

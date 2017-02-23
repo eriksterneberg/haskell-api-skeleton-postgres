@@ -15,9 +15,6 @@ routes = do
     -- All userdefined routes
     foldr1 (>>) $ map routeToScotty userdefinedRoutes
 
-    -- Serve static files
-    -- get "/404" $ file "404.html"
-
     -- Explorable routes
     addroute GET "/" $ text $ 
         intercalate "\n" $ "Explorable endpoints:" : (map (pack . show) userdefinedRoutes)

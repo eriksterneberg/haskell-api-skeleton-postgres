@@ -6,9 +6,6 @@ import Network.HTTP.Types.Method (StdMethod(..))
 import Data.Text.Lazy (unpack)
 
 
-type Verb = RoutePattern -> ActionM () -> ScottyM ()
-
-
 data Route = Route { method :: StdMethod
                    , pattern :: RoutePattern
                    , action :: ActionM ()
