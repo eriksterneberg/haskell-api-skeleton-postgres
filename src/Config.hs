@@ -43,4 +43,4 @@ getDefault env parser defaultVal = do
 getLogger :: Environment -> Middleware
 getLogger Development = logStdoutDev
 getLogger Production  = logStdout
-getLogger _           = logStdout  -- Todo: switch to no log
+getLogger _           = id
