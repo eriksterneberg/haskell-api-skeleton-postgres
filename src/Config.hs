@@ -44,9 +44,3 @@ getLogger :: Environment -> Middleware
 getLogger Development = logStdoutDev
 getLogger Production  = logStdout
 getLogger _           = id
-
- 
--- logStdoutDev' :: Middleware
--- logStdoutDev' = unsafePerformIO $ mkRequestLogger
---     putStrLn "Foo?"
---     return

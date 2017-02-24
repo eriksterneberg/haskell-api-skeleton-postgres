@@ -22,11 +22,11 @@ instance FromJSON User
 
 
 jenny :: User
-jenny = User 1 "Jenny Doe"
+jenny = User 1 "Jenny Doe" "password" "email@mail.com"
 
 
 bob :: User
-bob = User 2 "Bob Doe"
+bob = User 2 "Bob Doe" "password" "email@mail.com"
 
 
 allUsers :: [User]
@@ -40,31 +40,26 @@ matchesId id' user = userId user == id'
 routes :: [Route]
 routes =
     [ 
-
-    -- AUTHENTICATION
-      -- Login:
-      -- Route GET "/token" $ do
-        -- constructing a JWT for the user using GET parameters username and password
-
-      -- Authenticate request:
-      -- Route GET "/authenticate" $ do
-        -- return the user if the JWT checks out
-        -- the website can of course cache the user's name and email if it wants to
-        -- that cache can be invalidated when the user logs out
-        -- otherwise the cache will never expire. Redis?
-    -- END AUTHENTICATION
-
-    -- USER OPERATIONS
       Route GET "/user" $ json allUsers  -- all users
+
+      -- Route to get user using a certain id
     , Route GET "/user/:id" (do
         id' <- param "id"
         json (filter (matchesId id') allUsers)) -- one user
+
+      -- Route to create new user
     , Route POST "/user" (do
         user <- jsonData :: ActionM User
         json user)
-      -- Route to get user using a certain id
-      -- Route to create new user
+
       -- Route to update user
+    -- , Route PUT "/user" (do
+        -- json
+      -- )
+
       -- Route to delete user
-    -- END USER OPERATIONS
+    -- , Route DELETE "/user:id" (
+      -- id' <- param "id"
+      -- delete
+      -- )
     ]
