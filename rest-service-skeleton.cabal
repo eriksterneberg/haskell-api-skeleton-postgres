@@ -50,6 +50,7 @@ Test-Suite test-user
                       , wai-extra
                       , http-types
                       , text
+                      , hspec-wai-json
   default-language:   Haskell2010
   other-modules:       Types
                        , User

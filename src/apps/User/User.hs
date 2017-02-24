@@ -26,12 +26,8 @@ jenny :: User
 jenny = User 1 "Jenny Doe" "password" "email@mail.com"
 
 
-bob :: User
-bob = User 2 "Bob Doe" "password" "email@mail.com"
-
-
 allUsers :: [User]
-allUsers = [bob, jenny]
+allUsers = [jenny]
 
 
 matchesId :: Int -> User -> Bool
@@ -40,8 +36,7 @@ matchesId id' user = userId user == id'
 
 routes :: [Route]
 routes =
-    [ 
-
+    [
       -- POST
       -- Route to create new user
       -- Should return 409 if resource does not exist
