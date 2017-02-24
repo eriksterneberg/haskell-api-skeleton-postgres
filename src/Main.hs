@@ -5,6 +5,7 @@ module Main where
 import Web.Scotty
 import Network.Wai.Middleware.HttpAuth
 import Data.ByteString (ByteString)
+import Network.Wai (Application)
 
 import qualified Config
 import qualified Router

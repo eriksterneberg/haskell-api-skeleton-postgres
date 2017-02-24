@@ -5,6 +5,7 @@ module User where
 import GHC.Generics
 import Web.Scotty
 import Network.HTTP.Types.Method (StdMethod(..))
+import Network.HTTP.Types.Status
 import Data.Aeson (FromJSON, ToJSON)
 
 import Types
@@ -40,24 +41,38 @@ matchesId id' user = userId user == id'
 routes :: [Route]
 routes =
     [ 
-      Route GET "/user" $ json allUsers  -- all users
 
-      -- Route to get user using a certain id
-    , Route GET "/user/:id" (do
-        id' <- param "id"
-        json (filter (matchesId id') allUsers)) -- one user
-
+      -- POST
       -- Route to create new user
-    , Route POST "/user" (do
+      -- Should return 409 if resource does not exist
+      -- Returns 201 if resource is created together with link to new resource
+      -- TODO: Cannot work without integer id
+      -- TODO: Crashes if cannot parse incoming JSON
+      Route POST "/user" $ do
         user <- jsonData :: ActionM User
-        json user)
+        status status201
+        setHeader "Location" "/user/:newid"  -- TODO: Replace with real id
+        json user
 
+      -- GET
+    , Route GET "/user" $ json allUsers  -- all users
+      -- Route to get user using a certain id
+      -- Should return 404 if no user found
+    , Route GET "/user/:id" $ do
+        id' <- param "id"
+        json (filter (matchesId id') allUsers) -- one user
+
+      -- PUT
       -- Route to update user
-    -- , Route PUT "/user" (do
+      -- Return 204 if no content was PUT
+      -- Return 404 if user not found or id is otherwise invalid
+    -- , Route PUT "/user/:id" (do
         -- json
       -- )
 
+      -- DELETE
       -- Route to delete user
+      -- Return 404 if user not found or is otherwise invalid
     -- , Route DELETE "/user:id" (
       -- id' <- param "id"
       -- delete
