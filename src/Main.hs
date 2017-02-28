@@ -11,7 +11,7 @@ import qualified Router
 
 
 authenticate :: ByteString -> ByteString -> IO Bool
-authenticate user password = return (user == "zackarias.bergman@gmail.com" && password == "northernlights")
+authenticate user password = return (user == "user@email.com" && password == "foobar")
 
 
 main :: IO ()
