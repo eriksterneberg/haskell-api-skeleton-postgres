@@ -11,47 +11,31 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module User where
-
--- ( initDb
---             , routes
---             , Person
---             ) where
-
-import GHC.Generics
-import Data.Aeson (FromJSON, ToJSON)
+module Models where
 
 -- Imports Scotty
-import qualified Web.Scotty as Scotty
-import Network.HTTP.Types.Method (StdMethod(..))
+-- import qualified Web.Scotty as Scotty
+-- import Network.HTTP.Types.Method (StdMethod(..))
 
 -- Imports for Database
 -- import Control.Monad.IO.Class  (liftIO)
 -- import Database.Persist
-import Database.Persist.Postgresql
+-- import Database.Persist.Postgresql
 import Database.Persist.TH
 -- import Control.Monad.Logger (runStderrLoggingT)
 
 -- App imports
-import Types
+-- import Types
 
 
 -- DB
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-UserModel json
+User json
     email String
     name String Maybe
     age Int Maybe
     deriving Show
 |]
-
-
--- instance ToJSON UserModel
--- instance FromJSON UserModel
-
--- instance ToJSON Entity UserModel
--- instance FromJSON Entity UserModel
-
 
 -- main' :: IO ()
 -- main' = do
@@ -134,56 +118,19 @@ UserModel json
 -- END DB 
 
 
-data User = User { userId :: Int
-                 , userName :: String
-                 , password :: String
-                 , email :: String
-                 } deriving (Show, Generic)
+-- routes :: [Route]
+-- routes =
+--     [ 
+--       Route GET "/user" $ Scotty.json allUsers  -- all users
 
+--       -- Route to get user using a certain id
+--     , Route GET "/user/:id" (do
+--         id' <- Scotty.param "id"
+--         Scotty.json (filter (matchesId id') allUsers)) -- one user
 
-instance ToJSON User
-instance FromJSON User
+--       -- Route to create new user
+--     , Route POST "/user" (do
+--         user <- Scotty.jsonData :: Scotty.ActionM User
+--         Scotty.json user)
 
-
-jenny :: User
-jenny = User 1 "Jenny Doe" "password" "email@mail.com"
-
-
-bob :: User
-bob = User 2 "Bob Doe" "password" "email@mail.com"
-
-
-allUsers :: [User]
-allUsers = [bob, jenny]
-
-
-matchesId :: Int -> User -> Bool
-matchesId id' user = userId user == id'
-
-
-routes :: [Route]
-routes =
-    [ 
-      Route GET "/user" $ Scotty.json allUsers  -- all users
-
-      -- Route to get user using a certain id
-    , Route GET "/user/:id" (do
-        id' <- Scotty.param "id"
-        Scotty.json (filter (matchesId id') allUsers)) -- one user
-
-      -- Route to create new user
-    , Route POST "/user" (do
-        user <- Scotty.jsonData :: Scotty.ActionM User
-        Scotty.json user)
-
-      -- Route to update user
-    -- , Route PUT "/user" (do
-        -- json
-      -- )
-
-      -- Route to delete user
-    -- , Route DELETE "/user:id" (
-      -- id' <- param "id"
-      -- delete
-      -- )
-    ]
+--     ]

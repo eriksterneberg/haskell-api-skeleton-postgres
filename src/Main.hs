@@ -11,11 +11,11 @@
 
 module Main where
 
-import GHC.Generics
-import Data.Aeson (FromJSON, ToJSON)
-import Data.Text (pack)
-import Data.Text.Lazy (fromStrict)
+-- import Data.Aeson (FromJSON, ToJSON)
+-- import Data.Text (pack)
+-- import Data.Text.Lazy (fromStrict)
 import qualified Web.Scotty as Scotty
+import Network.HTTP.Types.Status (status404)
 
 import Control.Monad.IO.Class  (liftIO)
 import qualified Database.Persist.Postgresql as DB
@@ -27,9 +27,7 @@ import Network.Wai.Middleware.HttpAuth
 import Data.ByteString (ByteString)
 
 import qualified Config
-import qualified Router
-
-import qualified User
+import qualified Models
 
 
 authenticate :: ByteString -> ByteString -> IO Bool
@@ -37,15 +35,10 @@ authenticate user password = return (user == "user@email.com" && password == "fo
 
 
 main :: IO ()
-main = do
-    startServer
+main = startServer
 
 
 runDb pool query = liftIO (DB.runSqlPool query pool)
-
-
--- instance ToJSON User.UserModel
--- instance FromJSON User.UserModel
 
 
 startServer :: IO()
@@ -55,14 +48,11 @@ startServer = do
     runDb pool doMigrations
     -- runDb pool addTestData
 
-    putStrLn "Starting Scotty server..."
-
-    -- Port for server to run on
+    -- Get settings
     port <- Config.getPort
+    environment <- Config.getEnvironment  
 
-    -- Settings
-    environment <- Config.getEnvironment
-
+    putStrLn "Starting Scotty server..."
     scotty port $ do
 
         -- Logger
@@ -71,34 +61,39 @@ startServer = do
         -- Authenticate request to service
         -- middleware $ basicAuth authenticate "Default Realm"
 
-        -- Routes
-        -- Test, get all
-        get "/" $ do
+        -- TODO: fill in explorable routes
+        get "/" $ text "Explorable endpoints: (list endpoints)"
+
+        -- Get all users
+        get "/user" $ do
             allUsers <- runDb pool (DB.selectList [] [])
-            -- liftIO $ print allUsers
-            -- Scotty.json User.allUsers
-            Scotty.json (allUsers :: [DB.Entity User.UserModel])
+            Scotty.json (allUsers :: [DB.Entity Models.User])
 
-            -- Working
-            -- Scotty.text $ fromStrict $ pack $ show (allUsers :: [DB.Entity User.UserModel])
+        -- Get 1 user
+        get "/user/:id" $ do
+            id' <- param "id"
+            user <- runDb pool $ DB.get (DB.toSqlKey (read id'))
+            case user of
+                Nothing -> Scotty.status status404
+                Just (user') -> Scotty.json (user' :: Models.User)
 
-        -- Other routes
-        -- Router.routes
+        -- Post 1 user
+        -- Update 1 user with put
+        -- Delete 1 user
+        -- delete "/user/:id"
 
+        notFound $ text "there is no such route."
 
- -- transformers-0.5.2.0:Control.Monad.Trans.Reader.ReaderT
-                        -- DB.SqlBackend IO ()
 
 addTestData :: ReaderT DB.SqlBackend IO ()                        
 addTestData = do
-    erikId <- DB.insert (User.UserModel "erik.sterneberg@foo.com" Nothing (Just 34))
+    erikId <- DB.insert (Models.User "erik.sterneberg@foo.com" Nothing (Just 34))
     erik <- DB.get erikId
     liftIO $ print erik                        
-
 
 
 connStr :: DB.ConnectionString
 connStr = "host=localhost dbname=user user=postgres password=postgres port=5432"
 
 
-doMigrations = DB.runMigration User.migrateAll
+doMigrations = DB.runMigration Models.migrateAll
