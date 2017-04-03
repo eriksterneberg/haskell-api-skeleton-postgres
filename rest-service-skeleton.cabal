@@ -27,6 +27,11 @@ executable rest-service-skeleton
                        , wai-extra
                        , wai
                        , bytestring
+                       , monad-logger
+                       , transformers
+                       , persistent
+                       , persistent-postgresql
+                       , persistent-template
   other-modules:       Types
                        , User
                        , Config
