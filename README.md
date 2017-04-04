@@ -32,8 +32,9 @@ foo
 ## Todo
  - Add endpoints for POST, PUT and DELETE
  - Add more fields to User model
+ - Refactor to use Reader to ask for database pool
  - Add more comments in code
  - Implement functional tests
  - Add database username, password and address as environment variables
+ - Rename project to better name
  - Deploy on Heroku; deploy database on different dyno
- 
