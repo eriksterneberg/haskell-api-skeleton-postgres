@@ -11,7 +11,6 @@
 
 module Main where
 
--- import Data.Aeson (FromJSON, ToJSON)
 -- import Data.Text (pack)
 -- import Data.Text.Lazy (fromStrict)
 import qualified Web.Scotty as Scotty
@@ -20,7 +19,7 @@ import Network.HTTP.Types.Status (status404)
 import Control.Monad.IO.Class  (liftIO)
 import qualified Database.Persist.Postgresql as DB
 import Control.Monad.Logger (runStderrLoggingT)
-import Control.Monad.Trans.Reader (ReaderT)
+-- import Control.Monad.Trans.Reader (ReaderT)
 
 import Web.Scotty
 import Network.Wai.Middleware.HttpAuth
@@ -34,11 +33,14 @@ authenticate :: ByteString -> ByteString -> IO Bool
 authenticate user password = return (user == "user@email.com" && password == "foobar")
 
 
-main :: IO ()
-main = startServer
-
-
 runDb pool query = liftIO (DB.runSqlPool query pool)
+
+
+connStr :: DB.ConnectionString
+connStr = "host=localhost dbname=user user=postgres password=postgres port=5432"
+
+
+doMigrations = DB.runMigration Models.migrateAll
 
 
 startServer :: IO()
@@ -46,7 +48,6 @@ startServer = do
     putStrLn "Initializing db..."
     pool <- runStderrLoggingT $ DB.createPostgresqlPool connStr 10
     runDb pool doMigrations
-    -- runDb pool addTestData
 
     -- Get settings
     port <- Config.getPort
@@ -59,7 +60,7 @@ startServer = do
         middleware $ Config.getLogger environment
 
         -- Authenticate request to service
-        -- middleware $ basicAuth authenticate "Default Realm"
+        middleware $ basicAuth authenticate "Default Realm"
 
         -- TODO: fill in explorable routes
         get "/" $ text "Explorable endpoints: (list endpoints)"
@@ -85,15 +86,5 @@ startServer = do
         notFound $ text "there is no such route."
 
 
-addTestData :: ReaderT DB.SqlBackend IO ()                        
-addTestData = do
-    erikId <- DB.insert (Models.User "erik.sterneberg@foo.com" Nothing (Just 34))
-    erik <- DB.get erikId
-    liftIO $ print erik                        
-
-
-connStr :: DB.ConnectionString
-connStr = "host=localhost dbname=user user=postgres password=postgres port=5432"
-
-
-doMigrations = DB.runMigration Models.migrateAll
+main :: IO ()
+main = startServer        

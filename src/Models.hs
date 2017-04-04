@@ -24,9 +24,6 @@ module Models where
 import Database.Persist.TH
 -- import Control.Monad.Logger (runStderrLoggingT)
 
--- App imports
--- import Types
-
 
 -- DB
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -37,10 +34,6 @@ User json
     deriving Show
 |]
 
--- main' :: IO ()
--- main' = do
---     dbFunction doMigrations
---     -- dbFunction doDbStuff
 
 -- doMigrations = runMigration migrateAll
 
