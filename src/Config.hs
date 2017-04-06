@@ -13,7 +13,6 @@ import Network.Wai.Middleware.RequestLogger
 
 type Port = Int
 
-
 data Environment = Development
                  | Production
                  | Test
@@ -34,9 +33,13 @@ getPort = getDefault "PORT" readMaybe 3000
 getDefault :: Show b => String -> (String -> Maybe b) -> b -> IO b
 getDefault env parser defaultVal = do
     systemVal <- lookupEnv env
-    let port = systemVal >>= parser
-    when (isNothing port) $ putStrLn ("Using default value=" ++ show defaultVal ++ " Set environment PORT=X to override default.")
-    return $ fromMaybe defaultVal $ port
+    let value = systemVal >>= parser
+    when (isNothing value) $ putStrLn ("Using default value=" ++
+                                      show defaultVal ++
+                                      ". Set environment variable " ++
+                                      env ++
+                                      " to override default.")
+    return $ fromMaybe defaultVal value
 
 
 -- Get request logger
