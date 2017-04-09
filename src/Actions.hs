@@ -1,6 +1,7 @@
 module Actions ( getSingleUser
                , saveNewUser
                , getAllUsers
+               , deleteUser
                , getExplorableEndpoints) where
 
 import           Data.Text.Lazy (intercalate)
@@ -53,6 +54,17 @@ saveNewUser = do
         Just (user') -> do
             _ <- runDb $ DB.insert user'
             status created201
+
+
+deleteUser :: ActionA ()
+deleteUser = do
+    id' <- param "id"
+    user <- runDb $ DB.get (DB.toSqlKey (read id') :: Models.AuthUserId)
+    case user of
+        Nothing -> status status404
+        Just _ -> do
+            _ <- runDb $ DB.delete (DB.toSqlKey (read id') :: Models.AuthUserId)
+            status status204            
 
 
 getExplorableEndpoints :: ActionA ()

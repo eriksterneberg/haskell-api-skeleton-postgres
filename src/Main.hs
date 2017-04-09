@@ -57,10 +57,10 @@ app :: Config -> ScottyT Error ConfigM ()
 app cfg = do
     middleware $ Conf.getLogger (getEnvironment cfg)
     -- middleware $ basicAuth authenticate "Default Realm"
-    S.get "/" Actions.getExplorableEndpoints
-    S.get "/user/:id" Actions.getSingleUser
-    S.get "/user" Actions.getAllUsers
-    S.post "/user" Actions.saveNewUser
+    S.get "/"            Actions.getExplorableEndpoints
+    S.get "/user/:id"    Actions.getSingleUser
+    S.get "/user"        Actions.getAllUsers
+    S.post "/user"       Actions.saveNewUser
     -- S.put "/user" Actions.updateUser -- Update 1 user with put
-    -- S.delete "/user" Actions.deleteUser -- -- delete "/user/:id"
+    S.delete "/user/:id" Actions.deleteUser
     notFound $ text "there is no such route."      
