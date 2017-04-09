@@ -11,9 +11,9 @@
 
 module Main where
 
-import qualified Data.Aeson as Aeson    
+import Data.Aeson
 
-import Data.Text (pack)
+import Data.Text (pack, Text)
 import Data.Text.Lazy (fromStrict)
 import qualified Web.Scotty as Scotty
 import Web.Scotty.Internal.Types (ActionT)
@@ -40,7 +40,7 @@ runDb pool query = liftIO (DB.runSqlPool query pool)
 
 
 connStr :: DB.ConnectionString
-connStr = "host=localhost dbname=user user=postgres password=postgres port=5432"
+connStr = "host=localhost dbname=user_db user=postgres password=postgres port=5432"
 
 
 doMigrations = DB.runMigration Models.migrateAll
@@ -75,31 +75,30 @@ startServer = do
         -- Get all users
         get "/user" $ do
             allUsers <- runDb pool (DB.selectList [] [])
-            Scotty.json (allUsers :: [DB.Entity Models.User])
+            Scotty.json (allUsers :: [DB.Entity Models.AuthUser])
 
         -- Get 1 user
         get "/user/:id" $ do
             id' <- param "id"
             user <- runDb pool $ DB.get (DB.toSqlKey (read id'))
             case user of
-                Nothing -> Scotty.status status404
-                Just (user') -> Scotty.json (user' :: Models.User)
+                Nothing ->
+                    Scotty.status status404
+                Just (user') ->
+                    Scotty.json (user' :: Models.AuthUser)
 
         -- Post 1 user
         post "/user" $ do
-            -- article <- parseUserFromPOST
-            -- insertArticle pool article
             -- createdArticle article
-            user <- jsonData' :: Scotty.ActionM Models.User
-            Scotty.json (user :: Models.User)            
+            user <- parseUser :: Scotty.ActionM (Maybe Models.AuthUser)
 
-            -- user <- Scotty.jsonData :: Scotty.ActionM User
-
-        --     -- created201 if ok
-
-        --     case user 
-        --         Nothing ->  -- Should be Left, and return error (define error in models)
-        --             Scotty.status status400
+            case user of
+                Nothing ->  -- Should be Left, and return error (define error in models)
+                    Scotty.status status400
+                Just (user') ->
+                    do
+                        userId <- runDb pool $ DB.insert user'
+                        Scotty.status created201
 
                 -- Use status 409 Conflict if there was a conflict of some sort
 
@@ -107,17 +106,8 @@ startServer = do
         -- Delete 1 user
         -- delete "/user/:id"
 
-        notFound $ text "there is no such route."      
+        Scotty.notFound $ Scotty.text "there is no such route."      
 
 
--- jsonData' :: (A.FromJSON a) => ActionM a
-jsonData' = do
-    b <- body
-    -- maybe (raise "jsonData: no parse") return $ Aeson.decode b        
-    return $ Aeson.decode b
-
-
--- parseUserFromPOST :: ActionT Text IO (Maybe Models.User)
--- parseUserFromPOST = do b <- body
---     return $ (decode b :: Maybe Models.User)
---     where make
+-- parseUser :: ActionT Text IO (Maybe Models.AuthUser)
+parseUser = Scotty.body >>= \b -> return $ (decode b :: Maybe Models.AuthUser)
