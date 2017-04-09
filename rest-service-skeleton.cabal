@@ -36,4 +36,5 @@ executable rest-service-skeleton
                        , mtl
   other-modules:       Models
                        , Config
-
+                       , Actions
+                       , Types
