@@ -32,9 +32,9 @@ rest-service-skeleton
  - [DEV - Design & Usage - foo](link)
 
 ## Todo
- - Add endpoints for POST, PUT and DELETE
  - Add more fields to User model
  - Refactor to use Reader to ask for database pool
+ - Add endpoints for PUT and DELETE
  - Add error handling for failed POST (database connection error etc.)
  - Add encryption of login and password
  - Add more comments in code

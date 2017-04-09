@@ -33,6 +33,7 @@ executable rest-service-skeleton
                        , persistent-postgresql
                        , persistent-template
                        , resource-pool
+                       , mtl
   other-modules:       Models
                        , Config
 

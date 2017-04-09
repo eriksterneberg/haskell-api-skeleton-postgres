@@ -1,6 +1,7 @@
 module Config ( getEnvironment
               , getLogger
               , getPort
+              , Environment
               ) where
 
 import Text.Read (readMaybe)
