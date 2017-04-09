@@ -13,8 +13,8 @@ module Main where
 
 import Data.Aeson
 
-import Data.Text (pack, Text)
-import Data.Text.Lazy (fromStrict)
+import Data.Text.Internal.Lazy as LazyText
+-- import Data.Text.Lazy (fromStrict)
 import qualified Web.Scotty as Scotty
 import Web.Scotty.Internal.Types (ActionT)
 import Network.HTTP.Types.Status
@@ -28,6 +28,9 @@ import Web.Scotty
 import Network.Wai.Middleware.HttpAuth
 import Data.ByteString (ByteString)
 
+import Control.Monad.IO.Class (MonadIO)
+import Data.Pool (Pool)
+
 import qualified Config
 import qualified Models
 
@@ -36,6 +39,9 @@ authenticate :: ByteString -> ByteString -> IO Bool
 authenticate user password = return (user == "user@email.com" && password == "foobar")
 
 
+runDb :: (DB.BaseBackend backend ~ DB.SqlBackend,
+                Control.Monad.IO.Class.MonadIO m, DB.IsPersistBackend backend) =>
+               Data.Pool.Pool backend -> ReaderT backend IO a -> m a
 runDb pool query = liftIO (DB.runSqlPool query pool)
 
 
@@ -43,6 +49,7 @@ connStr :: DB.ConnectionString
 connStr = "host=localhost dbname=user_db user=postgres password=postgres port=5432"
 
 
+doMigrations :: ReaderT DB.SqlBackend IO ()
 doMigrations = DB.runMigration Models.migrateAll
 
 
@@ -67,7 +74,7 @@ startServer = do
         middleware $ Config.getLogger environment
 
         -- Authenticate request to service
-        -- middleware $ basicAuth authenticate "Default Realm"
+        middleware $ basicAuth authenticate "Default Realm"
 
         -- TODO: fill in explorable routes
         get "/" $ text "Explorable endpoints: (list endpoints)"
@@ -95,12 +102,9 @@ startServer = do
             case user of
                 Nothing ->  -- Should be Left, and return error (define error in models)
                     Scotty.status status400
-                Just (user') ->
-                    do
-                        userId <- runDb pool $ DB.insert user'
-                        Scotty.status created201
-
-                -- Use status 409 Conflict if there was a conflict of some sort
+                Just (user') -> do
+                    _ <- runDb pool $ DB.insert user'
+                    Scotty.status created201
 
         -- Update 1 user with put
         -- Delete 1 user
@@ -109,5 +113,5 @@ startServer = do
         Scotty.notFound $ Scotty.text "there is no such route."      
 
 
--- parseUser :: ActionT Text IO (Maybe Models.AuthUser)
+parseUser :: ActionT LazyText.Text IO (Maybe Models.AuthUser)
 parseUser = Scotty.body >>= \b -> return $ (decode b :: Maybe Models.AuthUser)
