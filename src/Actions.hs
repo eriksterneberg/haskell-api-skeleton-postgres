@@ -2,6 +2,7 @@ module Actions ( getSingleUser
                , saveNewUser
                , getAllUsers
                , deleteUser
+               , updateUser
                , getExplorableEndpoints) where
 
 import           Data.Text.Lazy (intercalate)
@@ -18,6 +19,12 @@ import qualified Models
 import           Types
 
 
+getUser :: (MonadTrans t, MonadIO (t ConfigM)) =>
+                 String -> t ConfigM (Maybe Models.AuthUser)
+getUser id' = do
+    user <- runDb $ DB.get (DB.toSqlKey (read id') :: Models.AuthUserId)
+    return user
+
 
 runDb :: (MonadTrans t, MonadIO (t ConfigM)) => DB.SqlPersistT IO a -> t ConfigM a
 runDb query = do
@@ -32,7 +39,7 @@ parseUser = body >>= \b -> return $ (decode b :: Maybe Models.AuthUser)
 getSingleUser :: ActionA ()
 getSingleUser = do
     id' <- param "id"
-    user <- runDb $ DB.get (DB.toSqlKey (read id'))
+    user <- getUser id'
     case user of
         Nothing -> status status404
         Just (user') -> json (user' :: Models.AuthUser) 
@@ -47,7 +54,6 @@ getAllUsers = do
 saveNewUser :: ActionA ()
 saveNewUser = do
     user <- parseUser
-
     case user of
         Nothing ->
             status status400
@@ -59,19 +65,40 @@ saveNewUser = do
 deleteUser :: ActionA ()
 deleteUser = do
     id' <- param "id"
-    user <- runDb $ DB.get (DB.toSqlKey (read id') :: Models.AuthUserId)
+    user <- getUser id'
     case user of
         Nothing -> status status404
         Just _ -> do
             _ <- runDb $ DB.delete (DB.toSqlKey (read id') :: Models.AuthUserId)
-            status status204            
+            status status204
+
+
+updateUser :: ActionA ()
+updateUser = do
+    id' <- param "id"
+    existingUser <- getUser id'
+    case existingUser of
+        Nothing ->
+            status status404
+        Just _ -> do
+            updatedUser <- parseUser
+            case updatedUser of
+                Nothing ->
+                    status status400
+                Just updatedUser' ->
+                    do
+                        _ <- runDb $ DB.repsert (DB.toSqlKey (read id')) updatedUser'
+                        status status204
+
 
 
 getExplorableEndpoints :: ActionA ()
 getExplorableEndpoints = text $ message
     where message = intercalate "\n"
                     [ "Explorable endpoints:"
-                    , "GET /user/:id  Get single user"
-                    , "GET /user      Get a list of all users"
-                    , "POST /user     Post a new user"
+                    , "GET /user/:id    Get single user"
+                    , "GET /user        Get a list of all users"
+                    , "POST /user       Post a new user"
+                    , "DELETE /user/:id Delete a user"
+                    , "PUT /user/:id    Update an existinguser"
                     ]

@@ -2,14 +2,17 @@ module Config ( getEnvironment
               , getLogger
               , getPort
               , getConnectionString
+              , getAuthenticationMiddleware
               , Environment
               ) where
 
+import           Data.ByteString (ByteString)
 import           Text.Read (readMaybe)
 import           Data.Maybe (fromMaybe, isNothing)
 import           Control.Monad (when)
 import           System.Environment (lookupEnv)
 
+import           Network.Wai.Middleware.HttpAuth (basicAuth)
 import           Database.Persist.Postgresql as DB
 import           Network.Wai (Middleware)
 import           Network.Wai.Middleware.RequestLogger ( logStdoutDev
@@ -60,4 +63,13 @@ getConnectionString = getDefault "CONN" readMaybe connStr
 
 connStr :: DB.ConnectionString
 connStr = "host=localhost dbname=user_db user=postgres password=postgres port=5432"
+
+
+authenticate :: ByteString -> ByteString -> IO Bool
+authenticate user password = return (user == "user@email.com" && password == "foobar")
+
+
+getAuthenticationMiddleware :: Environment -> Middleware
+getAuthenticationMiddleware Production = basicAuth authenticate "Default Realm"
+getAuthenticationMiddleware _          = id
 
