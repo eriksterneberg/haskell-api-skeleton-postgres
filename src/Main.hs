@@ -1,6 +1,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Main where
 
@@ -11,35 +12,25 @@ import           Control.Monad.Trans.Class  (MonadTrans, lift)
 import           Control.Monad.Reader.Class (MonadReader)
 import           Control.Monad.Reader       (asks)
 import           Control.Monad.Logger       (runStdoutLoggingT)
-import           Data.Monoid ((<>))
-import qualified Data.Text.Lazy as T
-
 import           Data.Pool ()
 import           Database.Persist.Postgresql as DB
 
 import qualified Web.Scotty()
 import           Web.Scotty.Trans as S
-import           Network.Wai.Middleware.RequestLogger(logStdoutDev)
+-- import           Network.Wai.Middleware.RequestLogger(logStdoutDev)
 
 import Data.Aeson (decode)
--- import Web.Scotty.Trans
 -- import Network.Wai.Middleware.RequestLogger(logStdoutDev)
 import Data.Text.Internal.Lazy as LazyText
--- import Web.Scotty.Internal.Types (ActionT)
 import Network.HTTP.Types.Status
 
--- import qualified Database.Persist.Postgresql as DB
-
--- import Web.Scotty hiding (body, get, html, middleware)
--- import Web.Scotty.Trans (scottyT, ScottyT)
--- import Network.Wai.Middleware.HttpAuth
+import Network.Wai.Middleware.HttpAuth (basicAuth)
 import Data.ByteString (ByteString)
-
--- import Data.Pool (Pool)
+import Data.Pool (Pool)
 
 import qualified Config as Conf
 import qualified Models
-import qualified Actions
+-- import qualified Actions
 
 
 --Move to Auth.hs
@@ -53,6 +44,12 @@ runDb :: (MonadTrans t, MonadIO (t ConfigM)) => DB.SqlPersistT IO a -> t ConfigM
 runDb query = do
     pool <- lift $ asks getPool
     liftIO (DB.runSqlPool query pool)
+
+-- Only for db migration, which doesn't work in the Scotty app
+runDb' :: (BaseBackend backend ~ SqlBackend, MonadIO m,
+                 IsPersistBackend backend) =>
+                Pool backend -> ReaderT backend IO a -> m a
+runDb' pool query = liftIO (DB.runSqlPool query pool)
 
 
 doMigrations :: ReaderT DB.SqlBackend IO ()
@@ -97,6 +94,8 @@ main = do
 
     -- Use different logger for production
     pool <- runStdoutLoggingT $ DB.createPostgresqlPool connStr 10
+    runDb' pool doMigrations
+
     let cfg = Config pool environment
     let r m = runReaderT (runConfigM m) cfg
 
@@ -107,13 +106,12 @@ main = do
 
 app :: Config -> ScottyT Error ConfigM ()
 app cfg = do
-    -- runDb doMigrations
 
     -- Middleware
     middleware $ Conf.getLogger (getEnvironment cfg)
 
---     -- Authenticate request to service
---     -- middleware $ basicAuth authenticate "Default Realm"
+    -- Authenticate request to service
+    middleware $ basicAuth authenticate "Default Realm"
 
     S.get "/" (html "Hello world")
 
@@ -138,28 +136,6 @@ app cfg = do
 
     -- Post 1 user
     S.post "/user" saveNewUser
-        -- createdArticle article
-        -- user <- parseUser
-
-        -- case user of
-        --     Nothing ->  -- Should be Left, and return error (define error in models)
-        --         status status400
-        --     Just (user') -> do
-        --         _ <- runDb $ DB.insert user'
-        --         status created201
-
-
-    -- -- Post 1 user
-    -- post "/user" $ do
-    --     -- createdArticle article
-    --     user <- parseUser :: ActionM (Maybe Models.AuthUser)
-
-    --     case user of
-    --         Nothing ->  -- Should be Left, and return error (define error in models)
-    --             status status400
-    --         Just (user') -> do
-    --             _ <- runDb pool $ DB.insert user'
-    --             status created201
 
     -- -- Update 1 user with put
     -- -- Delete 1 user
