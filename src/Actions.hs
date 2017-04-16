@@ -1,7 +1,7 @@
 module Actions ( getSingleUser
                , saveNewUser
                , getAllUsers
-               , deleteUser
+               -- , deleteUser
                , updateUser
                , getExplorableEndpoints) where
 
@@ -14,6 +14,7 @@ import           Data.Aeson (decode)
 import           Web.Scotty.Trans (body, json, status, text, param)
 import           Database.Persist.Postgresql as DB
 import           Network.HTTP.Types.Status
+import           Web.Scotty.Trans (ActionT)
 
 import qualified Models
 import           Types
@@ -36,13 +37,15 @@ parseUser :: ActionA (Maybe Models.AuthUser)
 parseUser = body >>= \b -> return $ (decode b :: Maybe Models.AuthUser)    
 
 
-getSingleUser :: ActionA ()
-getSingleUser = do
-    id' <- param "id"
-    user <- getUser id'
+return' :: Monad m => Status -> (t -> ActionT e m ()) -> Maybe t -> ActionT e m ()
+return' status' action user = do
     case user of
-        Nothing -> status status404
-        Just (user') -> json (user' :: Models.AuthUser) 
+        Nothing -> status status'
+        Just (user') -> action user'
+
+
+getSingleUser :: ActionA ()
+getSingleUser = param "id" >>= getUser >>= return' status404 (\x -> json (x :: Models.AuthUser))
 
 
 getAllUsers :: ActionA ()
@@ -62,16 +65,17 @@ saveNewUser = do
             status created201
 
 
-deleteUser :: ActionA ()
-deleteUser = do
-    id' <- param "id"
-    user <- getUser id'
-    case user of
-        Nothing -> status status404
-        Just _ -> do
-            _ <- runDb $ DB.delete (DB.toSqlKey (read id') :: Models.AuthUserId)
-            status status204
+-- deleteUser :: ActionA ()
+-- deleteUser = do
+--     id' <- param "id"
+--     user <- getUser id'
+--     case user of
+--         Nothing -> status status404
+--         Just _ -> do 
+--             _ <- runDb $ DB.delete (DB.toSqlKey (Models.AuthUserId user) :: Models.AuthUserId)
+--             status status204            
 
+    -- param "id" >>= getUser >>= return' status404 (runDb $ DB.delete (DB.toSqlKey (read id') :: Models.AuthUserId)) >> status status204
 
 updateUser :: ActionA ()
 updateUser = do

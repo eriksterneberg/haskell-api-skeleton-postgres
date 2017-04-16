@@ -57,5 +57,5 @@ app cfg = do
     get "/user"        getAllUsers
     post "/user"       saveNewUser
     put "/user/:id"    updateUser    
-    delete "/user/:id" deleteUser
+    -- delete "/user/:id" deleteUser
     notFound $ text "there is no such route."      
