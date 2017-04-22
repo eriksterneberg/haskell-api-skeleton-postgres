@@ -1,8 +1,8 @@
 module Actions ( getSingleUser
-               , saveNewUser
-               , getAllUsers
-               , deleteUser
-               , updateUser
+               -- , saveNewUser
+               -- , getAllUsers
+               -- , deleteUser
+               -- , updateUser
                , getExplorableEndpoints) where
 
 import           Data.Text.Lazy (intercalate)
@@ -20,76 +20,71 @@ import qualified Models
 import           Types
 
 
-getUser :: (MonadTrans t, MonadIO (t ConfigM)) =>
-                 String -> t ConfigM (Maybe Models.AuthUser)
-getUser id' = do
+-- getUser :: (MonadTrans t, MonadIO (t ConfigM)) =>
+                 -- String -> t ConfigM (Maybe Models.AuthUser)
+getUser errorAction id' = do
     user <- runDb $ DB.get (DB.toSqlKey (read id') :: Models.AuthUserId)
-    return user
+    case user of Nothing      -> return (Left errorAction)
+                 Just (user') -> return (Right user')
 
 
 runDb :: (MonadTrans t, MonadIO (t ConfigM)) => DB.SqlPersistT IO a -> t ConfigM a
-runDb query = do
-    pool <- lift $ asks getPool
-    liftIO (DB.runSqlPool query pool)
+runDb query = lift $ asks getPool >>= \pool -> liftIO (DB.runSqlPool query pool)
 
 
-parseUser :: ActionA (Maybe Models.AuthUser)
-parseUser = body >>= \b -> return $ (decode b :: Maybe Models.AuthUser)    
+
+-- parseUser :: ActionA (Maybe Models.AuthUser)
+parseUser errorAction = do
+    body' <- body
+    case (decode body' :: Maybe Models.AuthUser) of
+        Nothing     -> return (Left errorAction)
+        Just (user) -> return (Right user)
+
+
+toAction _ (Left errorAction) = errorAction
+toAction action (Right user) = action user
 
 
 getSingleUser :: ActionA ()
-getSingleUser = do
-    id' <- param "id"
-    user <- getUser id'
-    case user of Nothing -> status status404
-                 Just user' -> json (user' :: Models.AuthUser)
+getSingleUser = param "id" >>= getUser (status status404) >>= toAction (\x -> json (x :: Models.AuthUser))
 
 
 getAllUsers :: ActionA ()
-getAllUsers = do
-    allUsers <- runDb (DB.selectList [] [])        
-    json (allUsers :: [DB.Entity Models.AuthUser])      
+getAllUsers = runDb (DB.selectList [] []) >>= \x -> json (x :: [DB.Entity Models.AuthUser])
 
 
 saveNewUser :: ActionA ()
-saveNewUser = do
-    user <- parseUser
-    case user of
-        Nothing ->
-            status status400
-        Just user' -> do
-            _ <- runDb $ DB.insert user'
-            status created201
+saveNewUser = parseUser (status status400) >>= toAction (\user -> do
+    _ <- runDb $ DB.insert user
+    status created201)
 
 
 deleteUser :: ActionA ()
 deleteUser = do
     id' <- param "id"
-    user <- getUser id'
-    case user of
-        Nothing -> status status404
-        Just _ -> do
-            let userId = (DB.toSqlKey (read id') :: Models.AuthUserId)
-            _ <- runDb $ DB.delete userId
-            status status204            
+    param "id" >>= getUser (status status404) >>= toAction (\user -> do
+        let userId = (DB.toSqlKey (read id') :: Models.AuthUserId)
+        _ <- runDb $ DB.delete userId
+        status status204
+        )
 
 
-updateUser :: ActionA ()
-updateUser = do
-    id' <- param "id"
-    existingUser <- getUser id'
-    case existingUser of
-        Nothing ->
-            status status404
-        Just _ -> do
-            updatedUser <- parseUser
-            case updatedUser of
-                Nothing ->
-                    status status400
-                Just updatedUser' ->
-                    do
-                        _ <- runDb $ DB.repsert (DB.toSqlKey (read id')) updatedUser'
-                        status status204
+-- updateUser :: ActionA ()
+-- updateUser = do
+--     id' <- param "id"
+--     existingUser <- getUser id'
+--     case existingUser of
+--         Nothing ->
+--             status status404
+--         Just _ -> do
+--             updatedUser <- parseUser
+--             case updatedUser of
+--                 Nothing ->
+--                     status status400
+--                 Just updatedUser' ->
+--                     do
+--                         _ <- runDb $ DB.repsert (DB.toSqlKey (read id')) updatedUser'
+--                         status status204
 
 
 getExplorableEndpoints :: ActionA ()

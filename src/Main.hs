@@ -53,8 +53,8 @@ app cfg = do
     middleware $ Conf.getAuthenticationMiddleware environment
     get "/"            getExplorableEndpoints
     get "/user/:id"    getSingleUser
-    get "/user"        getAllUsers
-    post "/user"       saveNewUser
-    put "/user/:id"    updateUser    
-    delete "/user/:id" deleteUser
+    -- get "/user"        getAllUsers
+    -- post "/user"       saveNewUser
+    -- put "/user/:id"    updateUser    
+    -- delete "/user/:id" deleteUser
     notFound $ text "there is no such route."      
